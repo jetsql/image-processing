@@ -19,6 +19,7 @@ class Ui_Dialog(object):
         self.path2=path+'Q2_Image'
         self.path3=path+'Q3_Image'
         self.path4=path+'Q4_Image'
+    #主要UI介面
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(951, 542)
@@ -371,7 +372,7 @@ class Ui_Dialog(object):
         self.buttonBox.accepted.connect(Dialog.accept) # type: ignore
         self.buttonBox.rejected.connect(Dialog.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Dialog)
-
+    #設定物件顯示文字
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
@@ -395,44 +396,63 @@ class Ui_Dialog(object):
         self.pushButton_4_3.setText(_translate("Dialog", "4.3 Rotation,Scaling"))
         self.pushButton_4_4.setText(_translate("Dialog", "4.4 Shearing"))
         #程式功能部分
-        self.pushButton_1_1.clicked.connect(self.load_img)
+        self.pushButton_1_1.clicked.connect(self.f1_1)
 
-    def f1_1(self):
-        img1=cv2.imread(self.path2+'\\Lenna_pepperSalt.jpg')
-        cv2.imshow("Sun.jpg", self.img1_1)
-        cv2.waitKey(0)
     #開檔案
-    def load_img(self):
-        print("load_img clicked")
+    def f1_1(self):
+        print("Topic 1_1 clicked")
         self.sub_window = SubWindow1_1()
         print("check")
         self.sub_window.show()
         pass
+    #色彩分離
+    def f1_2(self):
+        print("Topic 1_2 clicked")
+        if FILENAME!="":
+            img = cv2.imread(FILENAME)
+            width = img.shape[0]
+            height = img.shape[1]
+            total_shape = width*height
+            red =[]
+            green = []
+            blue = []
+            
+            cv2.imshow("red",red)
+            cv2.imshow("green",green)
+            cv2.imshow("blue",blue)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            pass
+        else:
+            print("no img")
+        pass
+
 #顯示另外一個畫布開檔案
 class SubWindow1_1(QWidget):
     def __init__(self):
         super(SubWindow1_1,self).__init__()
         self.resize(400,300)
         self.setWindowTitle("load Image")
-        self.height = QtWidgets.QLabel(self)
-        self.height.setGeometry(QtCore.QRect(10, 40, 60, 12))
-        self.height.setObjectName("width")
         self.width = QtWidgets.QLabel(self)
-        self.width.setGeometry(QtCore.QRect(10, 80, 60, 12))
-        self.width.setObjectName("height")
+        self.width.setGeometry(QtCore.QRect(130, 40, 60, 30))
+        self.width.setObjectName("width")
+        self.height = QtWidgets.QLabel(self)
+        self.height.setGeometry(QtCore.QRect(130, 80, 60, 30))
+        self.height.setObjectName("height")
         self.lineEdit = QtWidgets.QLineEdit(self)
-        self.lineEdit.setGeometry(QtCore.QRect(90, 150, 141, 20))
+        #(x1,y1,x2,y2)
+        self.lineEdit.setGeometry(QtCore.QRect(130, 20, 141, 20))
         self.lineEdit.setObjectName("lineEdit")
-        self.pushButton = QtWidgets.QPushButton(self)
-        self.pushButton.setGeometry(QtCore.QRect(240, 150, 75, 23))
-        self.pushButton.setObjectName("Browse")
-        self.pushButton.setText("Browse")
-        self.pushButton.clicked.connect(self.browsefiles)
-        self.pushButton_2 = QtWidgets.QPushButton(self)
-        self.pushButton_2.setGeometry(QtCore.QRect(160, 230, 75, 23))
-        self.pushButton.setObjectName("OK!")
-        self.pushButton_2.setText("OK!")
-        self.pushButton_2.clicked.connect(self.pushfilename)
+        self.open_Button = QtWidgets.QPushButton(self)
+        self.open_Button.setGeometry(QtCore.QRect(100, 150, 75, 23))
+        self.open_Button.setObjectName("Browse")
+        self.open_Button.setText("Browse")
+        self.open_Button.clicked.connect(self.browsefiles)
+        self.ok_Button = QtWidgets.QPushButton(self)
+        self.ok_Button.setGeometry(QtCore.QRect(210, 150, 75, 23))
+        self.open_Button.setObjectName("OK!")
+        self.ok_Button.setText("OK!")
+        self.ok_Button.clicked.connect(self.pushfilename)
     #跳視窗開檔
     def browsefiles(self):
         fileName = QFileDialog.getOpenFileName(self,'Open File','D:\'','*.jpg')
@@ -442,6 +462,7 @@ class SubWindow1_1(QWidget):
     def pushfilename(self):
         global FILENAME
         src = cv2.imread(FILENAME)
+        #設定text數值
         self.height.setText(f"Width = {src.shape[0]}")
         self.width.setText(f"Height = {src.shape[1]}")
         cv2.namedWindow(FILENAME,cv2.WINDOW_AUTOSIZE)
