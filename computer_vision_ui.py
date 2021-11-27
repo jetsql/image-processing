@@ -13,6 +13,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 import cv2
 import numpy as np
+import os
 FILENAME=""
 class Ui_Dialog(object):
     def __init__(self,path='.\\Dataset_OpenCvDl_Hw1\\'):
@@ -21,12 +22,14 @@ class Ui_Dialog(object):
         self.img_2_white=cv2.imread(".\\Dataset_OpenCvDl_Hw1\\Q2_Image\\Lenna_whiteNoise.jpg")
         self.img_2_pepper=cv2.imread(".\\Dataset_OpenCvDl_Hw1\\Q2_Image\\Lenna_pepperSalt.jpg")
         self.img_3_house=cv2.imread(".\\Dataset_OpenCvDl_Hw1\\Q3_Image\\House.jpg")
-        self.f3_gussian=[]
+        self.f3_gaussian=[]
         self.f3_filter=np.array([
             [0.045,0.122,0.045],
             [0.122,0.332,0.122],
             [0.045,0.122,0.045]
         ])
+        self.f3_sobel_x=np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
+        self.f3_sobel_y=np.array([[1,2,1],[0,0,0],[-1,-2,-1]])
         
     #主要UI介面
     def setupUi(self, Dialog):
@@ -536,11 +539,11 @@ class Ui_Dialog(object):
     #########
     #第三大題 Edge Detection
     #########
-    def f3_(self,width,heigh,filter):
+    def f3_(self,heigh,width,filter):
         image_list_1=[]
-        for i in range (width-3):
+        for i in range (heigh-3):
             image_list_2=[]
-            for j in range(heigh-3):
+            for j in range(width-3):
                 start=i+3
                 end=j+3
                 data=self.img_3_house[i:start,j:end]
@@ -548,7 +551,7 @@ class Ui_Dialog(object):
                 mix_vaule=np.multiply(filter,data)
                 #將矩陣內的做加總
                 sum_vaule=np.sum(mix_vaule)
-                image_list_2.append(np.sum(sum_vaule))
+                image_list_2.append(sum_vaule)
             image_list_1.append(image_list_2)
         gaussian_blur=np.array(image_list_1).astype(np.uint8)
         return gaussian_blur
@@ -563,11 +566,11 @@ class Ui_Dialog(object):
         gray=cv2.cvtColor(self.img_3_house,cv2.COLOR_BGR2GRAY)
         
          
-        width,heigh,channel=self.img_3_house.shape
+        heigh,width,channel=self.img_3_house.shape
         #Gaussian smooth it ，不能用openCV  
-        self.f3_gussian=self.f3_(width,heigh,normalize_filter)
+        self.f3_gaussian=self.f3_(heigh,width,normalize_filter)
         cv2.imshow('f_3_1_gray',gray)
-        cv2.imshow('f_3_1_blur',self.f3_gussian)
+        cv2.imshow('f_3_1_blur',self.f3_gaussian)
         cv2.waitKey(0)
         pass
 
@@ -575,55 +578,96 @@ class Ui_Dialog(object):
     def f3_2(self):
         print("function 3_2 clicked")
         cv2.destroyAllWindows()
-        #題目filter
+        heigh_house,width_house,channel_1=self.img_3_house.shape
+        #清空ndarray
+        self.f3_gaussian=[]
+        #f3_1題目filter
         normalize_filter=self.f3_filter
-        #接f3_1題的影像數值
-        gussian_blur_img=self.f3_gussian
-        width_1,heigh_1,channel_1=self.img_3_house.shape
-        width_2,heigh_2=gussian_blur_img.shape
+        #重新填入
+        self.f3_gaussian=self.f3_(heigh_house,width_house,normalize_filter)
+        heigh_gaussian,width_gaussian=self.f3_gaussian.shape
         #題目sobel_x filter
-        sobel_x_filter=np.array([
-            [-1,0,1],
-            [-2,0,2],
-            [-1,0,1]
-        ])
+        sobel_x_filter=self.f3_sobel_x
         #建立空白矩陣
-        sobel_zero_martix=np.zeros((heigh_1,width_1))
-        gussian_zero_martix=np.zeros((heigh_2,width_2))
+        sobel_zero_martix=np.zeros((heigh_gaussian,width_gaussian))
+        gaussian_zero_martix=np.zeros(self.f3_gaussian.shape)
         #塞值
-        for i in range(width_1-2):
-            for j in range(heigh_1-2):
-                sum_vaule=np.sum(self.f3_gussian[i:i+3,j:j+3]*sobel_x_filter)
-                gussian_zero_martix[i+1,j+1]=abs(sum_vaule)
-                sobel_zero_martix[i+1,j+1]=gussian_zero_martix[i+1,j+1]
+        for i in range(heigh_gaussian-2):
+            for j in range(width_gaussian-2):
+                sum_vaule=np.sum(self.f3_gaussian[i:i+3,j:j+3] * sobel_x_filter)
+                gaussian_zero_martix[i + 1, j + 1] = abs(sum_vaule)
+                sobel_zero_martix[i+1,j+1]=gaussian_zero_martix[i+1,j+1]
         sobal_x_img=np.uint8(sobel_zero_martix)
         cv2.imshow('f3_2',sobal_x_img)
         cv2.waitKey(0)
         pass
 
-    #Sobel Y
+    #Sobel Y，不能用openCV
     def f3_3(self):
         print("function 3_3 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
-
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+        cv2.destroyAllWindows()
+        heigh_house,width_house,channel_1=self.img_3_house.shape
+        #清空ndarray
+        self.f3_gaussian=[]
+        #f3_1題目filter
+        normalize_filter=self.f3_filter
+        #重新填入
+        self.f3_gaussian=self.f3_(heigh_house,width_house,normalize_filter)
+        heigh_gaussian,width_gaussian=self.f3_gaussian.shape
+        #題目sobel_y filter
+        sobel_x_filter=self.f3_sobel_y
+        #建立空白矩陣
+        sobel_zero_martix=np.zeros((heigh_gaussian,width_gaussian))
+        gaussian_zero_martix=np.zeros(self.f3_gaussian.shape)
+        #塞值
+        for i in range(heigh_gaussian-2):
+            for j in range(width_gaussian-2):
+                sum_vaule=np.sum(self.f3_gaussian[i:i+3,j:j+3] * sobel_x_filter)
+                gaussian_zero_martix[i + 1, j + 1] = abs(sum_vaule)
+                sobel_zero_martix[i+1,j+1]=gaussian_zero_martix[i+1,j+1]
+        sobal_y_img=np.uint8(sobel_zero_martix)
+        cv2.imshow('f3_3',sobal_y_img)
+        cv2.waitKey(0)
         pass
     #Magnitude 
     def f3_4(self):
         print("function 3_4 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
+        cv2.destroyAllWindows()
+        heigh_house,width_house,channel_1=self.img_3_house.shape
+        #清空ndarray
+        self.f3_gaussian=[]
+        #f3_1題目filter
+        normalize_filter=self.f3_filter
+        #重新填入
+        self.f3_gaussian=self.f3_(heigh_house,width_house,normalize_filter)
+        heigh_gaussian,width_gaussian=self.f3_gaussian.shape
+        #建立空白矩陣
+        sobel_x_zero_martix=np.zeros((heigh_gaussian,width_gaussian))
+        sobel_y_zero_martix=np.zeros((heigh_gaussian,width_gaussian))
+        gaussian_zero_martix=np.zeros((heigh_gaussian,width_gaussian))
+        #塞值
+        for i in range(heigh_gaussian-2):
+            for j in range(width_gaussian-2):
+                start_sum=i+3
+                end_sum=j+3
+                start_input=i+1
+                end_input=j+1
 
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+                x_sum_vaule=np.sum(self.f3_gaussian[i:start_sum,j:end_sum]*self.f3_sobel_x)
+                y_sum_vaule=np.sum(self.f3_gaussian[i:start_sum,j:end_sum]*self.f3_sobel_y)
+                
+                #塞sobel_x
+                sobel_x_zero_martix[start_input,end_input]=abs(x_sum_vaule)
+                #塞sobel_y
+                sobel_y_zero_martix[start_input,end_input]=abs(y_sum_vaule)
+                #整理數值
+                x_vaule=sobel_x_zero_martix[start_input,end_input]
+                y_vaule=sobel_y_zero_martix[start_input,end_input]
+                #塞結果，用Magnitude 公式
+                gaussian_zero_martix[start_input,end_input]=(x_vaule*x_vaule+y_vaule*y_vaule)**0.5
+        magnitude_img=np.uint8(gaussian_zero_martix)
+        cv2.imshow('f3_4',magnitude_img)
+        cv2.waitKey(0)
         pass
     #########
     #第四大題 Transforms
@@ -705,7 +749,10 @@ class SubWindow1_1(QWidget):
         self.ok_Button.clicked.connect(self.pushfilename)
     #跳視窗開檔
     def browsefiles(self):
-        fileName = QFileDialog.getOpenFileName(self,'Open File','D:\'','*.jpg')
+        path=os.getcwd()
+        path=str(path)
+        print(path)
+        fileName = QFileDialog.getOpenFileName(self,'Open File',str(path),'*.jpg')
         global FILENAME
         FILENAME = fileName[0]
         self.lineEdit.setText(fileName[0])
