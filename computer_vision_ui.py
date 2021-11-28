@@ -30,6 +30,12 @@ class Ui_Dialog(object):
         ])
         self.f3_sobel_x=np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
         self.f3_sobel_y=np.array([[1,2,1],[0,0,0],[-1,-2,-1]])
+        self.f4_img=cv2.imread(".\\Dataset_OpenCvDl_Hw1\\Q4_Image\\SQUARE-01.png")
+        self.f4_window_w=400
+        self.f4_window_h=300
+        self.f4_shift_img=[]
+        self.f4_rotation_img=[]
+        self.f4_shearing_img=[]
         
     #主要UI介面
     def setupUi(self, Dialog):
@@ -628,7 +634,9 @@ class Ui_Dialog(object):
         sobal_y_img=np.uint8(sobel_zero_martix)
         cv2.imshow('f3_3',sobal_y_img)
         cv2.waitKey(0)
-        pass
+       
+        pass    
+
     #Magnitude 
     def f3_4(self):
         print("function 3_4 clicked")
@@ -668,6 +676,8 @@ class Ui_Dialog(object):
         magnitude_img=np.uint8(gaussian_zero_martix)
         cv2.imshow('f3_4',magnitude_img)
         cv2.waitKey(0)
+
+
         pass
     #########
     #第四大題 Transforms
@@ -676,50 +686,54 @@ class Ui_Dialog(object):
     #Resize
     def f4_1(self):
         print("function 4_1 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
-
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+        cv2.destroyAllWindows()
+        cv2.imshow('f4_1_img',self.f4_img)
+        self.f4_img=cv2.resize(self.f4_img,(256,256))
+        cv2.imshow('f4_1_result',self.f4_img)
+        cv2.waitKey(0)
         pass
     #Translation
     def f4_2(self):
+        #https://blog.csdn.net/qq878594585/article/details/81838260
+        '''
+        題目
+        Xnew = Xold + 0 pixels = 128 + 0 = 128
+        Ynew = Yold + 60 pixels = 128 + 60 = 188
+        Point C (128, 128) is center of resized image
+        Point C’(128, 188) is new center of image
+        '''
         print("function 4_2 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
-
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+        _x=0
+        _y=60
+        #設定點
+        template=np.float32([[1,0,_x],[0,1,_y]])
+        self.f4_shift_img=cv2.warpAffine(self.f4_img,template,(self.f4_window_w,self.f4_window_h))
+        cv2.imshow('f4_2',self.f4_shift_img)
+        cv2.waitKey(0)
         pass
     #Rotation, Scaling
     def f4_3(self):
         print("function 4_3 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
-
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+        _x_new=128+0
+        _y_new=128+60
+        _angle=10
+        _scale=0.5
+        shift_img=self.f4_shift_img
+        #設定點，angle為10度，scale為0.5
+        martix=cv2.getRotationMatrix2D((_x_new, _y_new),_angle, _scale)
+        self.f4_rotation_img=cv2.warpAffine(shift_img,martix,(self.f4_window_w,self.f4_window_h))
+        cv2.imshow('f4_3',self.f4_rotation_img)
+        cv2.waitKey(0)
         pass
     #Shearing
     def f4_4(self):
         print("function 4_4 clicked")
-        if FILENAME!="":
-            img = cv2.imread(FILENAME)
-
-
-            cv2.waitKey(0)
-            pass
-        else:
-            print("no img")
+        old_location=np.float32([[50,50],[200,50],[50,200]])
+        new_location=np.float32([[10,100],[200,50],[100,250]])
+        martix=cv2.getAffineTransform(old_location,new_location)
+        self.f4_shearing_img=cv2.warpAffine(self.f4_rotation_img,martix,(self.f4_window_w,self.f4_window_h))
+        cv2.imshow('f4_4',self.f4_shearing_img)
+        cv2.waitKey(0)
         pass
 #顯示另外一個畫布開檔案
 class SubWindow1_1(QWidget):
