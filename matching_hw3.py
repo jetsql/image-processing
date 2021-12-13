@@ -16,10 +16,18 @@ import time
 FILENAME=""
 class Ui_Dialog(object):
     def __init__(self):
-        path = os.getcwd()
+        file_name=FILENAME.split('/')[:-2]
+        path=""
+        for i in file_name:
+            name=i+"//"
+            path=path+name
         #指定資料夾
-        os.chdir("D:\\code\\image_processing_course\\hw3_matching")
-        self.class_img=cv2.imread("")
+        os.chdir("C:\\Users\\nm610\\Hw3_img")
+        self.path = path
+        #100資料夾的template
+        self.template_100=cv2.imread(path+'100\\100-Template.jpg',cv2.IMREAD_GRAYSCALE)
+        #die資料夾的template
+        self.template_die=cv2.imread(path+'Die\\Die-Template.jpg',cv2.IMREAD_GRAYSCALE)
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(380, 300)
@@ -30,10 +38,10 @@ class Ui_Dialog(object):
         self.pushButton_1.setGeometry(QtCore.QRect(50, 30, 190, 28))
         self.pushButton_1.setObjectName("pushButton_1")
         self.pushButton_2 = QtWidgets.QPushButton(self.groupBox)
-        self.pushButton_2.setGeometry(QtCore.QRect(50, 90, 190, 28))
+        self.pushButton_2.setGeometry(QtCore.QRect(50, 80, 190, 28))
         self.pushButton_2.setObjectName("pushButton_2")
         self.pushButton_3 = QtWidgets.QPushButton(self.groupBox)
-        self.pushButton_3.setGeometry(QtCore.QRect(50, 150, 190, 28))
+        self.pushButton_3.setGeometry(QtCore.QRect(50, 130, 190, 28))
         self.pushButton_3.setObjectName("pushButton_3")
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -43,9 +51,11 @@ class Ui_Dialog(object):
         self.groupBox.setTitle(_translate("Dialog", "Hw3_Matching_(NM6101098)"))
         self.pushButton_1.setText(_translate("Dialog", "load_image"))
         self.pushButton_2.setText(_translate("Dialog", "Texture_Matching"))
-        self.pushButton_3.setText(_translate("Dialog", "Shape_Matching"))
+        self.pushButton_3.setText(_translate("Dialog", "openCV_Matching"))
         #按鈕事件
         self.pushButton_1.clicked.connect(self.load_image)
+        self.pushButton_2.clicked.connect(self.texture_matching)
+        self.pushButton_3.clicked.connect(self.openCV_process)
     def load_image(self):
         print('checked load_image')
         self.sub_window = SubWindow1_1()
@@ -53,194 +63,157 @@ class Ui_Dialog(object):
         pass
     def texture_matching(self):
         print('chicked texture_matching')
-        start_time=time.time()
+        self.matching=matching_function('D:\\code\\image_processing_course\\hw3_matching\\Hw3_img\\')
+        self.matching._use_function()
+    def openCV_process(self):
+        start = time.time()
+        #matching影像
+        matching_img = cv2.imread(FILENAME,cv2.IMREAD_GRAYSCALE)
+        file_name=FILENAME.split('/')[-2]
+        #判斷template影像
+        if file_name =='100':
+            template_img = self.template_100
+        if file_name =='Die':
+            template_img = self.template_die
+        h,w = template_img.shape
+        result_img = np.array(matching_img)
+        res = cv2.matchTemplate(result_img, template_img, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.96
+        cv2.normalize(res, res, 0, 1, cv2.NORM_MINMAX)
+        loc = np.where(res >= threshold)
+        BGR_img = cv2.cvtColor(result_img, cv2.COLOR_GRAY2BGR)
+        for point in zip(*loc[::-1]):
+            cv2.rectangle(BGR_img, point, (point[0] + w, point[1] + h), (0, 0, 255), 1)
+        end = time.time()
+        print("==========================")
+        print('openCV run-time:', end-start)
+        print("==========================")
+        cv2.imshow('opencv_result',BGR_img)
+        cv2.waitKey(0)
 
-        end_time=time.time()
-#參考的
 class matching_function:
-    def __init__(self, color, seat):
-        self.color = color  # 顏色屬性
-        self.seat = seat  # 座位屬性
-    def _pad(self,X, k):
-        XX_shape = tuple(np.subtract(X.shape, k.shape) + (1, 1))
-        if XX_shape!=X.shape:
-            P = np.subtract(X.shape, XX_shape) // 2
-            MD = np.subtract(X.shape, XX_shape) % 2
-            X_ = np.pad(X, ((P[0], P[0]+MD[0]), (P[1], P[1]+MD[1])), 'constant')
+    def __init__(self, path):
+        file_name=FILENAME.split('/')[:-2]
+        path=""
+        for i in file_name:
+            name=i+"//"
+            path=path+name
+        #指定資料夾
+        os.chdir("C:\\Users\\nm610\\Hw3_img")
+        self.path = path
+        #100資料夾的template
+        self.template_100=cv2.imread(path+'100\\100-Template.jpg')
+        #die資料夾的template
+        self.template_die=cv2.imread(path+'Die\\Die-Template.jpg')
+        #顯示字
+        self.text_X = 'X: ' 
+        self.text_Y = 'Y: ' 
+        self.text_S ='Score' 
+    def downsample(self,image):
+        img_down = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
+        return img_down
+
+    def upsample(self,image):
+        img_up = cv2.resize(image, (0, 0), fx=4, fy=4)
+        return img_up
+    def sub_martix(self,I, T):
+        #先處理I
+        _shape = tuple(np.subtract(I.shape, T.shape) + (1, 1))
+        if _shape!=I.shape:
+            P = np.subtract(I.shape, _shape) // 2
+            MD = np.subtract(I.shape, _shape) % 2
+            new_I = np.pad(I, ((P[0], P[0]+MD[0]), (P[1], P[1]+MD[1])), 'constant')
         else:
-            X_ = X
-        return X_
+            new_I = I
 
-    def _DSP(self,X, k, iter=1):
-        for i in range(iter):
-            k_ = k / (k.shape[0] * k.shape[1])
-            X_pad =self._pad(X, k_)
-            view_shape = tuple(np.subtract(X_pad.shape, k_.shape) + 1) + k_.shape
-            strides = X_pad.strides + X_pad.strides
-            sub_matrices = self.as_strided(X_pad, view_shape, strides) 
-            cv = np.einsum('klij,ij->kl', sub_matrices, k_)
-            X = cv[::2, ::2]
-        return X
 
-    def _USP(self,DP, k, iter=1):
-        for i in range(iter):
-            DP_ = np.insert(DP, range(DP.shape[0]), 0, axis=0)
-            X = np.insert(DP_, range(DP.shape[1]), 0, axis=1)
-            k_ = k / (k.shape[0] * k.shape[1])
-            X_pad =self._pad(X, k_)
-            view_shape = tuple(np.subtract(X_pad.shape, k_.shape) + 1) + k_.shape
-            strides = X_pad.strides + X_pad.strides
-            sub_matrices =self.as_strided(X_pad, view_shape, strides) 
-            DP = np.einsum('klij,ij->kl', sub_matrices, k_)
-        return DP
-
-    def _nor(X, h, w):
-        X_ = X - np.sum(X) / (h*w)
-        return X_
-
-    def _CC(X, Y):
-        res = np.sum(X * Y) / np.sqrt(np.sum(X**2) * np.sum(Y**2))
-        return res
-
-    def _sub(self,I, T):
-        view_shape = tuple(np.subtract(I.shape, T.shape) + 1) + T.shape
-        strides = I.strides + I.strides
-        sub_matrices =self.as_strided(I, view_shape, strides)
+        view_shape = tuple(np.subtract(new_I.shape, T.shape) + 1) + T.shape
+        total_strides = new_I.strides + new_I.strides
+        sub_matrices =as_strided(new_I, view_shape, total_strides)
         return sub_matrices
 
-    def _match(self,sub_matrices, T):
-        h_, w_, h, w = sub_matrices.shape
-        L = []
-        T_ = self._nor(T, h, w)
-        for y, x in product(range(h_), range(w_)):
-            S_ = self._nor(sub_matrices[y, x, :, :], h, w)
-            L.append(self._CC(T_, S_))
-        res = np.array(L).reshape(h_, w_)
-        return res
-
-    def _split(path, img_type='100'):
-        tot_list = os.listdir(path)
-        img_list, tpl_list = [], []
-        for j in tot_list:
-            k = j.replace('.', '-')
-            if k.split('-')[0]==img_type and k.split('-')[-2]!='MatchResult':
-                if k.split('-')[-2]=='Template':
-                    tpl_list.append(j)
-                else:
-                    img_list.append(j)
-        return img_list, tpl_list
-
-    def _NMS(boxes, overlapThresh):
-        # if there are no boxes, return an empty list
-        if len(boxes) == 0:
-            return []
-        # if the bounding boxes integers, convert them to floats --
-        # this is important since we'll be doing a bunch of divisions
-        if boxes.dtype.kind == "i":
-            boxes = boxes.astype("float")
-        # initialize the list of picked indexes	
-        pick = []
-        # grab the coordinates of the bounding boxes
+    def process_box(self,res,template_img,matching_img, thrs):
+        BGR_img = cv2.cvtColor(matching_img, cv2.COLOR_GRAY2BGR)
+        M = np.where(res>thrs, 1, 0) 
+        box_i, box_j = np.where(M!=0)
+        h, w = template_img.shape
+        boxes = np.vstack([box_j - w//2, box_i - h//2,box_j + w//2, box_i + h//2]).T
+        
         x1 = boxes[:,0]
         y1 = boxes[:,1]
         x2 = boxes[:,2]
         y2 = boxes[:,3]
-        # compute the area of the bounding boxes and sort the bounding
-        # boxes by the bottom-right y-coordinate of the bounding box
-        area = (x2 - x1 + 1) * (y2 - y1 + 1)
-        idxs = np.argsort(y2)
-        # keep looping while some indexes still remain in the indexes
-        # list
-        while len(idxs) > 0:
-            # grab the last index in the indexes list and add the
-            # index value to the list of picked indexes
-            last = len(idxs) - 1
-            i = idxs[last]
-            pick.append(i)
-            # find the largest (x, y) coordinates for the start of
-            # the bounding box and the smallest (x, y) coordinates
-            # for the end of the bounding box
-            xx1 = np.maximum(x1[i], x1[idxs[:last]])
-            yy1 = np.maximum(y1[i], y1[idxs[:last]])
-            xx2 = np.minimum(x2[i], x2[idxs[:last]])
-            yy2 = np.minimum(y2[i], y2[idxs[:last]])
-            # compute the width and height of the bounding box
-            w = np.maximum(0, xx2 - xx1 + 1)
-            h = np.maximum(0, yy2 - yy1 + 1)
-            # compute the ratio of overlap
-            overlap = (w * h) / area[idxs[:last]]
-            # delete all indexes from the index list that have
-            idxs = np.delete(idxs, np.concatenate(([last],
-                np.where(overlap > overlapThresh)[0])))
-        # return only the bounding boxes that were picked using the
-        # integer data type
-        return boxes[pick].astype("int")  
-
-    def _getBox(self,res, T_org, thrs):
-        M = np.where(res>thrs, 1, 0) 
-        box_i, box_j = np.where(M!=0)
-        h, w = T_org.shape
-        boxes = np.vstack([box_j - w//2, box_i - h//2,\
-                    box_j + w//2, box_i + h//2]).T
-        box_res = self._NMS(boxes, 0.4)
-        return box_res  
-
-    def _plotBox(I_org, box_res):
-        I_box_R = cv2.cvtColor(I_org, cv2.COLOR_GRAY2BGR)
-        for i in range(len(box_res)):
-            x1, y1 = box_res[i, :2]
-            x2, y2 = box_res[i, 2:]
-            mid_x, mid_y = (x1 + x2) // 2, (y1 + y2) // 2
-            text_X = 'X: ' + str(mid_x)
-            text_Y = 'Y: ' + str(mid_y)
-            cv2.rectangle(I_box_R, (x1, y1), (x2, y2), (0, 0, 255), 1)
-            cv2.putText(I_box_R, text_X, (mid_x, mid_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
-            cv2.putText(I_box_R, text_Y, (mid_x, mid_y+45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
-        return I_box_R    
+        #算boxes數量
+        box_count = np.argsort(x1)
+        mid_x, mid_y = (x1 + x2) // 2, (y1 + y2) // 2
+        score = res[mid_y, mid_x]
+        #NMS選最大
+        max_value,order,max_value_order = None,0,0
+        for num in score:
+            if (max_value is None or num > max_value):
+                max_value = num
+                max_value_order=order
+            order=order+1
+        boxes=boxes[max_value_order]
+        #算中心點，x相加//y相加
+        mid_x, mid_y = (boxes[0] + boxes[2]) // 2, (boxes[1] + boxes[3]) // 2
+        #計算分數
+        score = res[mid_y, mid_x]
+        #標示
+        self.text_X = self.text_X + str(mid_x)
+        self.text_Y = self.text_Y + str(mid_y)
+        self.text_S = self.text_S + str(np.round(score, 2))
+        #畫框
+        cv2.rectangle(BGR_img, (boxes[0], boxes[1]), (boxes[2], boxes[3]), (0,255,0), 1)
+        cv2.putText(BGR_img, self.text_X, (mid_x, mid_y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
+        cv2.putText(BGR_img, self.text_Y, (mid_x, mid_y+20), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
+        cv2.putText(BGR_img, self.text_S, (mid_x, mid_y+40), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
+        return BGR_img 
+    def match(self,matching_img,template_img):
+        new_I = self.sub_martix(matching_img, template_img)
+        h1, w1,h2, w2 =new_I.shape
+        temp_list = []
+        process_t = template_img - np.sum(template_img) / (h2*w2)
+        for y, x in product(range(h1), range(w1)):
+            process_s = new_I[y, x, :, :] - np.sum(new_I[y, x, :, :]) / (h2*w2)
+            temp = np.sum(process_t * process_s) / np.sqrt(np.sum(process_t**2) * np.sum(process_s**2))
+            temp_list.append(temp)
+        res = np.array(temp_list).reshape(h1, w1)
+        return res
 
     #使用
     def _use_function(self):
+        #cv2.destroyAllWindows()
+        #matching影像
+        img = cv2.imread(FILENAME)
+        matching_img=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        file_name=FILENAME.split('/')[-2]
+        #判斷template影像
+        if file_name =='100':
+            template_img = cv2.cvtColor(self.template_100, cv2.COLOR_BGR2GRAY)
+        if file_name =='Die':
+            template_img = cv2.cvtColor(self.template_die, cv2.COLOR_BGR2GRAY)
         start_time = time.time()
-        path = '../img'
-        img_list, tpl_list = self._split(path, img_type='100')
-        img_org = cv2.imread(os.path.join(path, img_list[1]))
-        tpl = cv2.imread(os.path.join(path, tpl_list[0]))
 
-        fig = plt.figure()
-        plt.imshow(img_org)
+        #down_sampling
+        matching_img=self.downsample(matching_img)
+        template_img = self.downsample(template_img)
 
-        fig = plt.figure()
-        plt.imshow(tpl)
-        #顯示
-        I_org = cv2.cvtColor(img_org, cv2.COLOR_BGR2GRAY)
-        T_org = cv2.cvtColor(tpl, cv2.COLOR_BGR2GRAY)
+        #matching
+        res=self.match(matching_img,template_img)
 
-        G = np.array([[1,  4,  6,  4, 1],
-                    [4, 16, 24, 16, 4],
-                    [6, 24, 36, 24, 6],
-                    [4, 16, 24, 16, 4],
-                    [1,  4,  6,  4, 1]])
-        I = self._DSP(I_org, G/16, iter=3)
-        T = self._DSP(T_org, G/16, iter=3)
-        I_pad = self._pad(I, T)
-
-        sub_matrices = self._sub(I_pad, T)
-        CC = self._match(sub_matrices, T)
-
-        res = self._USP(CC, G/4, iter=3)
-
-        fig = plt.figure()
-        plt.imshow(res)
         #box顯示
-        box_res = self._getBox(res, T_org, 0.12)
-        #NMS bouning box結果
-        I_box_R = self._plotBox(I_org, box_res)
-
-        fig = plt.figure()
-        plt.imshow(cv2.cvtColor(I_box_R, cv2.COLOR_BGR2RGB))
-
+        box_res = self.process_box(res, template_img,matching_img, 0.8)
+        #up_sampling
+        box_res = self.upsample(box_res)
+        
+        result=cv2.cvtColor(box_res, cv2.COLOR_BGR2RGB)
         end_time = time.time()
-        print ("\n" + "It cost {:.4f} sec" .format(end_time-start_time))
+        print("==========================")
+        print('new run-time:', end_time-start_time)
+        print("==========================")
+        cv2.imshow('result',result)
+        cv2.waitKey(0)
 
 #顯示另外一個畫布開檔案
 class SubWindow1_1(QWidget):
@@ -271,7 +244,6 @@ class SubWindow1_1(QWidget):
     def browsefiles(self):
         path=os.getcwd()
         path=str(path)
-        print(path)
         fileName = QFileDialog.getOpenFileName(self,'Open File',str(path),'*.jpg')
         global FILENAME
         FILENAME = fileName[0]
@@ -280,12 +252,12 @@ class SubWindow1_1(QWidget):
         global FILENAME
         src = cv2.imread(FILENAME)
         #設定text數值
-        self.height.setText(f"Width = {src.shape[0]}")
-        self.width.setText(f"Height = {src.shape[1]}")
-        cv2.namedWindow(FILENAME,cv2.WINDOW_AUTOSIZE)
-        cv2.imshow(FILENAME,src)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # self.height.setText(f"Width = {src.shape[0]}")
+        # self.width.setText(f"Height = {src.shape[1]}")
+        # cv2.namedWindow(FILENAME,cv2.WINDOW_AUTOSIZE)
+        # cv2.imshow(FILENAME,src)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
