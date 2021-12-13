@@ -165,9 +165,9 @@ class matching_function:
         self.text_S = self.text_S + str(np.round(score, 2))
         #畫框
         cv2.rectangle(BGR_img, (boxes[0], boxes[1]), (boxes[2], boxes[3]), (0,255,0), 1)
-        cv2.putText(BGR_img, self.text_X, (mid_x, mid_y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
-        cv2.putText(BGR_img, self.text_Y, (mid_x, mid_y+20), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
-        cv2.putText(BGR_img, self.text_S, (mid_x, mid_y+40), cv2.FONT_HERSHEY_COMPLEX, 0.4, (255, 0,0), 1)
+        cv2.putText(BGR_img, self.text_X, (mid_x, mid_y), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0,255), 1)
+        cv2.putText(BGR_img, self.text_Y, (mid_x, mid_y+20), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0,255), 1)
+        cv2.putText(BGR_img, self.text_S, (mid_x, mid_y+40), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0,255), 1)
         return BGR_img 
     def match(self,matching_img,template_img):
         new_I = self.sub_martix(matching_img, template_img)
