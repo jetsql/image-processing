@@ -17,7 +17,7 @@ FILENAME=""
 class Ui_Dialog(object):
     def __init__(self):
         #指定資料夾
-        os.chdir("D:\\code\\Hw3\\img\\")
+        os.chdir("D:\\code\\image_processing_course\\hw4_optical_flow\\img")
 
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
